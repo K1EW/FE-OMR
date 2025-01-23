@@ -171,6 +171,14 @@ class AnswerSheet:
                     blacken.append(1)
                 else:
                     blacken.append(0)
+            self.blacken[section] = blacken
+            if section == "top":
+                self.subject, self.venue, self.student_id, self.cancel = Interpreter.top(self.blacken)
+            elif section == "answer":
+                if self.subject == "ERR" or self.student_id == "ERR":
+                    break
+                self.answer, self.score, self.total_score = Interpreter.answer(self.blacken, self.subject)
+
             self.sections[section] = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             for idx, black in enumerate(blacken):
                 (x, y), rect_size = marks[idx]
@@ -178,8 +186,7 @@ class AnswerSheet:
                     cv2.rectangle(self.sections[section], (int(x * width), int(y * height)), (int(x * width + rect_size * height), int(y * height + rect_size * height)), (0, 0, 255), 2)
                 else:
                     cv2.rectangle(self.sections[section], (int(x * width), int(y * height)), (int(x * width + rect_size * height), int(y * height + rect_size * height)), (0, 255, 0), 2)
-            self.blacken[section] = blacken
-    
+
     @staticmethod
     def valid_id(code: list[int]) -> bool:
         sum = 0 
@@ -279,7 +286,7 @@ class AnswerSheet:
         input("Press Enter to continue...")
         os.remove("_temp.jpg")
 
-def evaluate(sheet: AnswerSheet, subject: str) -> None:
+def evaluate(sheet: AnswerSheet, subject: str) -> AnswerSheet:
     if subject in ["math", "physics"]:
         subject = "alevel"
     sheet.binary_img = AnswerSheet.convert_to_binary(sheet.img, 200)
@@ -290,12 +297,8 @@ def evaluate(sheet: AnswerSheet, subject: str) -> None:
         "top": "FEST_top",
         "answer": f"FEST_{subject}_answer"
     })
-    sheet.subject, sheet.venue, sheet.student_id, sheet.cancel = Interpreter.top(sheet.blacken)
-    print(f"Subject: {sheet.subject} ({sheet.venue}) - Student ID: {sheet.student_id} - Cancel: {sheet.cancel}", end=" - ")
-    if sheet.subject == "ERR" or sheet.student_id == "ERR":
-        return
-    sheet.answer, sheet.score, sheet.total_score = Interpreter.answer(sheet.blacken, sheet.subject)
-    print(f"Total score: {sheet.total_score}")
+    print(f"Subject: {sheet.subject} ({sheet.venue}) - ID: {sheet.student_id} - Cancel: {sheet.cancel} - Total Score: {sheet.total_score}")
+    return sheet
 
 if __name__ == "__main__":
     # Example on how to evaluate an answer sheet
